@@ -5,6 +5,7 @@ import com.ficmart.paymentgateway.payment.api.dto.AuthorizeResponse;
 import com.ficmart.paymentgateway.payment.api.dto.CaptureRequest;
 import com.ficmart.paymentgateway.payment.api.dto.CaptureResponse;
 import com.ficmart.paymentgateway.payment.application.exceptions.IdempotencyConflictException;
+import com.ficmart.paymentgateway.payment.application.exceptions.MissingBankAuthorizationException;
 import com.ficmart.paymentgateway.payment.application.exceptions.PaymentAlreadyProcessedException;
 import com.ficmart.paymentgateway.payment.application.exceptions.PaymentRefNotFoundException;
 import com.ficmart.paymentgateway.payment.domain.Payment;
@@ -12,6 +13,7 @@ import com.ficmart.paymentgateway.payment.domain.PaymentStatus;
 import com.ficmart.paymentgateway.payment.infrastructure.PaymentRepository;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.MockBankClient;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.dto.BankAuthorizeRequest;
+import com.ficmart.paymentgateway.payment.infrastructure.bank.dto.BankCaptureRequest;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankAuthorizationException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -119,21 +121,38 @@ public class PaymentService {
     }
 
     // Business logic for returning a response on capture
-    public CaptureResponse capturePayment(CaptureRequest request) {
-        var payment = paymentRepository.findByPaymentReference(request.paymentReference()).orElse(null);
-        if (payment == null) {
-            throw new PaymentRefNotFoundException();
-        }
-        if (!payment.getStatus().equals(PaymentStatus.AUTHORIZED)) {
+    public CaptureResponse capturePayment(CaptureRequest request, String idempotencyKey) {
+        var payment = paymentRepository.findByPaymentReference(request.paymentReference()).orElseThrow(PaymentRefNotFoundException::new);
+
+        if (payment.getStatus() != PaymentStatus.AUTHORIZED) {
             throw new PaymentAlreadyProcessedException();
         }
+
+        if (payment.getBankAuthorizationId() == null) {
+            throw new MissingBankAuthorizationException();
+        }
+
+        var bankRequest = new BankCaptureRequest();
+
+        bankRequest.setAuthorizationId(payment.getBankAuthorizationId());
+        bankRequest.setAmount(payment.getAmountInCents());
+
+        var bankResponse = mockBankClient.capture(bankRequest, idempotencyKey);
+
         payment.setStatus(PaymentStatus.CAPTURED);
+        payment.setBankCaptureId(
+                bankResponse.getCaptureId()
+        );
+        payment.setCapturedAt(LocalDateTime.now());
         payment.setUpdatedAt(LocalDateTime.now());
+
         var savedPayment = paymentRepository.save(payment);
 
         return new CaptureResponse(
                 savedPayment.getPaymentReference(),
                 savedPayment.getStatus(),
+                savedPayment.getAmountInCents(),
+                savedPayment.getCurrency(),
                 "Captured payment successfully"
         );
     }

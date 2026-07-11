@@ -6,9 +6,11 @@ import com.ficmart.paymentgateway.payment.application.exceptions.PaymentAlreadyP
 import com.ficmart.paymentgateway.payment.application.exceptions.PaymentRefNotFoundException;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.dto.PaymentErrorResponse;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankAuthorizationException;
+import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankOperationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -65,8 +67,8 @@ public class PaymentExceptionHandler {
                 .body(response);
     }
 
-    @ExceptionHandler(BankAuthorizationException.class)
-    public ResponseEntity<PaymentErrorResponse> handleBankAuthorization(BankAuthorizationException ex) {
+    @ExceptionHandler(BankOperationException.class)
+    public ResponseEntity<PaymentErrorResponse> handleBankOperation(BankAuthorizationException ex) {
         var status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.SERVICE_UNAVAILABLE;
         var response = new PaymentErrorResponse(
                 ex.getErrorCode(),
@@ -81,5 +83,14 @@ public class PaymentExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<String> handleMissingRequestHeader(
+            MissingRequestHeaderException ex
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getHeaderName() + " header is required.");
     }
 }
