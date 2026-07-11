@@ -23,8 +23,8 @@ public class PaymentController {
     }
 
     @PostMapping("/capture")
-    public ResponseEntity<CaptureResponse> capture(@RequestBody CaptureRequest request) {
-        var payment = paymentService.capturePayment(request);
+    public ResponseEntity<CaptureResponse> capture(@RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody CaptureRequest request) {
+        var payment = paymentService.capturePayment(request, idempotencyKey);
         return ResponseEntity.ok(payment);
     }
 }
