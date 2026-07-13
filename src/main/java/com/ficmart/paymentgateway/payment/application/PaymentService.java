@@ -368,4 +368,27 @@ public class PaymentService {
             );
         }
     }
+
+    public PaymentResponse getPaymentByReference(String paymentReference) {
+        var payment = paymentRepository.findByPaymentReference(paymentReference)
+                .orElseThrow(() -> new PaymentRefNotFoundException(
+                        "Payment not found with reference: " + paymentReference
+                ));
+
+        return new PaymentResponse(
+                payment.getPaymentReference(),
+                payment.getOrderId(),
+                payment.getCustomerId(),
+                payment.getAmountInCents(),
+                payment.getCurrency(),
+                payment.getStatus(),
+                payment.getFailureReason(),
+                payment.getAuthorizedAt(),
+                payment.getCapturedAt(),
+                payment.getVoidedAt(),
+                payment.getRefundedAt(),
+                payment.getCreatedAt(),
+                payment.getUpdatedAt()
+        );
+    }
 }
