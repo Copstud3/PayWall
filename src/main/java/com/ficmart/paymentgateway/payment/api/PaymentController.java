@@ -37,4 +37,12 @@ public class PaymentController {
         return ResponseEntity.ok(payment);
     }
 
+    @GetMapping("/{paymentReference}")
+    public ResponseEntity<PaymentResponse> getPayment(
+            @PathVariable String paymentReference
+    ) {
+        var payment = paymentService.getPaymentByReference(paymentReference);
+        return ResponseEntity.ok(payment);
+    }
+
 }
