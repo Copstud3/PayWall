@@ -3,9 +3,11 @@ package com.ficmart.paymentgateway.payment.api;
 import com.ficmart.paymentgateway.payment.api.dto.ValidationErrorResponse;
 import com.ficmart.paymentgateway.payment.application.exceptions.IdempotencyConflictException;
 import com.ficmart.paymentgateway.payment.application.exceptions.PaymentAlreadyProcessedException;
+import com.ficmart.paymentgateway.payment.application.exceptions.PaymentNotRefundableException;
 import com.ficmart.paymentgateway.payment.application.exceptions.PaymentRefNotFoundException;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.dto.PaymentErrorResponse;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankAuthorizationException;
+import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankCommunicationException;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankOperationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +32,12 @@ public class PaymentExceptionHandler {
                 .body(ex.getMessage());
     }
 
-    @ExceptionHandler(PaymentAlreadyProcessedException.class)
-    public ResponseEntity<String> handlePaymentAlreadyProcessed(
-            PaymentAlreadyProcessedException ex) {
-
+    @ExceptionHandler({
+            PaymentAlreadyProcessedException.class,
+            PaymentNotRefundableException.class,
+            IdempotencyConflictException.class
+    })
+    public ResponseEntity<String> handlePaymentConflict(RuntimeException ex) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
@@ -78,12 +82,6 @@ public class PaymentExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
-    @ExceptionHandler(IdempotencyConflictException.class)
-    public ResponseEntity<String> handleIdempotencyConflict(IdempotencyConflictException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ex.getMessage());
-    }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<String> handleMissingRequestHeader(
@@ -92,5 +90,22 @@ public class PaymentExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ex.getHeaderName() + " header is required.");
+    }
+
+    @ExceptionHandler(BankCommunicationException.class)
+    public ResponseEntity<Map<String, Object>> handleBankCommunicationException(
+            BankCommunicationException ex
+    ) {
+        var response = Map.<String, Object>of(
+                "timestamp", LocalDateTime.now(),
+                "status", HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "error", "Service Unavailable",
+                "code", "BANK_UNAVAILABLE",
+                "message", ex.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(response);
     }
 }

@@ -19,4 +19,14 @@ public class BankOperationException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    public BankOperationException(
+            HttpStatusCode status,
+            String errorCode,
+            String message,
+            Throwable cause
+    ) {
+        super(message, cause);
+        this.status = status;
+        this.errorCode = errorCode;
+    }
 }
