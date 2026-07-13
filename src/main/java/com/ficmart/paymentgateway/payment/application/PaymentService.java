@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -369,12 +370,23 @@ public class PaymentService {
         }
     }
 
+    public List<PaymentResponse> getPaymentsByOrderId(String orderId) {
+        return paymentRepository.findAllByOrderId(orderId)
+                .stream()
+                .map(this::mapToPaymentResponse)
+                .toList();
+    }
+
     public PaymentResponse getPaymentByReference(String paymentReference) {
         var payment = paymentRepository.findByPaymentReference(paymentReference)
                 .orElseThrow(() -> new PaymentRefNotFoundException(
                         "Payment not found with reference: " + paymentReference
                 ));
 
+        return mapToPaymentResponse(payment);
+    }
+
+    private PaymentResponse mapToPaymentResponse(Payment payment) {
         return new PaymentResponse(
                 payment.getPaymentReference(),
                 payment.getOrderId(),
