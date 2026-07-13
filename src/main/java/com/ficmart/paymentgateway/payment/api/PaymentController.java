@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequestMapping("/api/v1/payments")
 @RestController
 @AllArgsConstructor
@@ -43,6 +45,14 @@ public class PaymentController {
     ) {
         var payment = paymentService.getPaymentByReference(paymentReference);
         return ResponseEntity.ok(payment);
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(
+            @PathVariable String orderId
+    ) {
+        var payments = paymentService.getPaymentsByOrderId(orderId);
+        return ResponseEntity.ok(payments);
     }
 
 }
