@@ -10,4 +10,8 @@ public class BankAuthorizationException extends BankOperationException {
     public BankAuthorizationException(HttpStatusCode status, String errorCode, String message) {
         super(status, errorCode, message);
     }
+
+    public BankAuthorizationException(HttpStatusCode status, String errorCode, String message, Throwable cause) {
+        super(status, errorCode, message, cause);
+    }
 }

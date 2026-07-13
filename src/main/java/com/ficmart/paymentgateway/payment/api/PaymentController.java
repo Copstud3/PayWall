@@ -1,9 +1,6 @@
 package com.ficmart.paymentgateway.payment.api;
 
-import com.ficmart.paymentgateway.payment.api.dto.AuthorizeRequest;
-import com.ficmart.paymentgateway.payment.api.dto.AuthorizeResponse;
-import com.ficmart.paymentgateway.payment.api.dto.CaptureRequest;
-import com.ficmart.paymentgateway.payment.api.dto.CaptureResponse;
+import com.ficmart.paymentgateway.payment.api.dto.*;
 import com.ficmart.paymentgateway.payment.application.PaymentService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -27,4 +24,17 @@ public class PaymentController {
         var payment = paymentService.capturePayment(request, idempotencyKey);
         return ResponseEntity.ok(payment);
     }
+
+    @PostMapping("/void")
+    public ResponseEntity<VoidResponse> voidPayment(@RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody VoidRequest request) {
+        var payment = paymentService.voidPayment(request, idempotencyKey);
+        return ResponseEntity.ok(payment);
+    }
+
+    @PostMapping("/refund")
+    public ResponseEntity<RefundResponse> refundPayment(@RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody RefundRequest request) {
+        var payment = paymentService.refundPayment(request, idempotencyKey);
+        return ResponseEntity.ok(payment);
+    }
+
 }
