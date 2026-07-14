@@ -1,5 +1,6 @@
 package com.ficmart.paymentgateway.payment.api;
 
+import com.ficmart.paymentgateway.payment.api.dto.ErrorResponse;
 import com.ficmart.paymentgateway.payment.api.dto.ValidationErrorResponse;
 import com.ficmart.paymentgateway.payment.application.exceptions.IdempotencyConflictException;
 import com.ficmart.paymentgateway.payment.application.exceptions.PaymentAlreadyProcessedException;
@@ -37,10 +38,19 @@ public class PaymentExceptionHandler {
             PaymentNotRefundableException.class,
             IdempotencyConflictException.class
     })
-    public ResponseEntity<String> handlePaymentConflict(RuntimeException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ex.getMessage());
+    public ResponseEntity<ErrorResponse> handlePaymentConflict(
+            RuntimeException ex
+    ) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                "PAYMENT_CONFLICT",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -72,11 +82,20 @@ public class PaymentExceptionHandler {
     }
 
     @ExceptionHandler(BankOperationException.class)
-    public ResponseEntity<PaymentErrorResponse> handleBankOperation(BankAuthorizationException ex) {
-        var status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.SERVICE_UNAVAILABLE;
-        var response = new PaymentErrorResponse(
+    public ResponseEntity<ErrorResponse> handleBankOperation(
+            BankOperationException ex
+    ) {
+
+        HttpStatus status = ex.getStatus() != null
+                ? (HttpStatus) ex.getStatus()
+                : HttpStatus.BAD_GATEWAY;
+
+        ErrorResponse response = new ErrorResponse(
+                status.value(),
+                status.getReasonPhrase(),
                 ex.getErrorCode(),
-                ex.getMessage()
+                ex.getMessage(),
+                LocalDateTime.now()
         );
 
         return ResponseEntity.status(status).body(response);
@@ -84,24 +103,32 @@ public class PaymentExceptionHandler {
 
 
     @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<String> handleMissingRequestHeader(
+    public ResponseEntity<ErrorResponse> handleMissingRequestHeader(
             MissingRequestHeaderException ex
     ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ex.getHeaderName() + " header is required.");
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "MISSING_HEADER",
+                ex.getHeaderName() + " header is required.",
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(BankCommunicationException.class)
-    public ResponseEntity<Map<String, Object>> handleBankCommunicationException(
+    public ResponseEntity<ErrorResponse> handleBankCommunicationException(
             BankCommunicationException ex
     ) {
-        var response = Map.<String, Object>of(
-                "timestamp", LocalDateTime.now(),
-                "status", HttpStatus.SERVICE_UNAVAILABLE.value(),
-                "error", "Service Unavailable",
-                "code", "BANK_UNAVAILABLE",
-                "message", ex.getMessage()
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                "BANK_UNAVAILABLE",
+                ex.getMessage(),
+                LocalDateTime.now()
         );
 
         return ResponseEntity
