@@ -2,10 +2,7 @@ package com.ficmart.paymentgateway.payment.api;
 
 import com.ficmart.paymentgateway.payment.api.dto.ErrorResponse;
 import com.ficmart.paymentgateway.payment.api.dto.ValidationErrorResponse;
-import com.ficmart.paymentgateway.payment.application.exceptions.IdempotencyConflictException;
-import com.ficmart.paymentgateway.payment.application.exceptions.PaymentAlreadyProcessedException;
-import com.ficmart.paymentgateway.payment.application.exceptions.PaymentNotRefundableException;
-import com.ficmart.paymentgateway.payment.application.exceptions.PaymentRefNotFoundException;
+import com.ficmart.paymentgateway.payment.application.exceptions.*;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.dto.PaymentErrorResponse;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankAuthorizationException;
 import com.ficmart.paymentgateway.payment.infrastructure.bank.exception.BankCommunicationException;
@@ -134,5 +131,20 @@ public class PaymentExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(response);
+    }
+
+    @ExceptionHandler(PaymentOperationInProgressException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentOperationInProgress(
+            PaymentOperationInProgressException ex
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(
+                        HttpStatus.CONFLICT.value(),
+                        "Conflict",
+                        "OPERATION_IN_PROGRESS",
+                        ex.getMessage(),
+                        LocalDateTime.now()
+                ));
     }
 }
