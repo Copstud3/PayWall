@@ -10,7 +10,7 @@ The payment state is stored in the payments table using a status field that repr
 
 ## Failure Handling - What's your retry strategy? How do you handle partial failures?
 
-For cases of partial failures like network connectivity issues, the payment status is set to PENDING, until it is retried. The payment is not necessarily validated until it is retried again before it can be authorized. 
+For cases of partial failures like network connectivity issues, the payment status is set to PENDING, until it is retried. The payment is not necessarily validated until it is retried again before it can be authorized. Currently, the application does not retry automatically, it instead stores the payment information while returning the error message to the client. The client can then retry the payment with the same idempotency-key header.
 
 ## Idempotency - How did you implement it? What edge cases did you consider?
 
