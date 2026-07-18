@@ -10,6 +10,20 @@ A production-inspired Spring Boot payment gateway that processes payment authori
 
 ---
 
+# Live Demo
+
+**Swagger UI**
+
+http://18.200.250.3:8080/swagger-ui/index.html
+
+**Health Check**
+
+http://18.200.250.3:8080/actuator/health
+
+> Hosted on AWS EC2 using Docker and PostgreSQL.
+
+---
+
 ## Features
 
 - Authorize payments
@@ -23,6 +37,7 @@ A production-inspired Spring Boot payment gateway that processes payment authori
 - OpenAPI/Swagger documentation
 - Flyway database migrations
 - Docker support
+- Production deployment on AWS EC2
 - Integration tests covering successful flows and failure scenarios
 
 ---
@@ -40,6 +55,7 @@ A production-inspired Spring Boot payment gateway that processes payment authori
 - Docker & Docker Compose
 - JUnit 5
 - MockMvc
+- AWS EC2
 
 ---
 
@@ -66,8 +82,6 @@ src/main/java
 ---
 
 ## Payment Lifecycle
-
-The gateway supports the following payment lifecycle:
 
 ```text
                +-----------+
@@ -174,10 +188,22 @@ Run the mock bank using its Docker Compose configuration.
 mvn spring-boot:run
 ```
 
-The application will be available at:
+Application:
 
 ```text
 http://localhost:8080
+```
+
+Swagger:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+Health:
+
+```text
+http://localhost:8080/actuator/health
 ```
 
 ---
@@ -200,37 +226,62 @@ PAYMENT_DB_PASSWORD=your_password
 BANK_BASE_URL=http://host.docker.internal:8787
 ```
 
-> `host.docker.internal` allows the payment gateway container to communicate with the mock bank running on the host machine.
-
 ### Build and Start
 
 ```bash
 docker compose up --build
 ```
 
-Run in detached mode:
+Detached mode:
 
 ```bash
 docker compose up -d --build
 ```
 
-### Stop the Application
+### Stop
 
 ```bash
 docker compose down
 ```
 
-Remove containers and database volume:
+Remove volumes:
 
 ```bash
 docker compose down -v
 ```
 
-The application will be available at:
+Application:
 
 ```text
 http://localhost:8080
 ```
+
+---
+
+## Deploying to AWS EC2
+
+Clone the repository on your EC2 instance:
+
+```bash
+git clone https://github.com/Copstud3/PayWall.git
+cd PayWall
+```
+
+Create your production `.env` file.
+
+Deploy using:
+
+```bash
+./deploy.sh
+```
+
+The deployment script:
+
+- Pulls the latest code
+- Builds Docker images
+- Restarts containers
+- Waits for the application health check
+- Displays deployment status
 
 ---
 
@@ -239,8 +290,8 @@ http://localhost:8080
 ```text
                     Client
                        │
-                       │
-               localhost:8080
+                       ▼
+               Port 8080 (EC2)
                        │
                        ▼
               +--------------------+
@@ -262,39 +313,39 @@ http://localhost:8080
 
 ---
 
-## Docker Commands
+## Useful Docker Commands
 
-Build the project:
+Build:
 
 ```bash
 docker compose build
 ```
 
-Start services:
+Start:
 
 ```bash
 docker compose up
 ```
 
-Start in detached mode:
+Detached:
 
 ```bash
 docker compose up -d
 ```
 
-View logs:
+Logs:
 
 ```bash
 docker compose logs -f
 ```
 
-View only the gateway logs:
+Gateway logs:
 
 ```bash
 docker compose logs -f payment-gateway
 ```
 
-Stop services:
+Stop:
 
 ```bash
 docker compose down
@@ -304,10 +355,32 @@ docker compose down
 
 ## API Documentation
 
-Swagger UI:
+Local:
 
 ```text
 http://localhost:8080/swagger-ui/index.html
+```
+
+Production:
+
+```text
+http://18.200.250.3:8080/swagger-ui/index.html
+```
+
+---
+
+## Health Endpoint
+
+Local:
+
+```text
+http://localhost:8080/actuator/health
+```
+
+Production:
+
+```text
+http://18.200.250.3:8080/actuator/health
 ```
 
 ---
@@ -320,7 +393,7 @@ Run all tests:
 mvn test
 ```
 
-Run a full verification build:
+Full verification:
 
 ```bash
 mvn clean verify
@@ -348,9 +421,11 @@ The gateway returns appropriate HTTP status codes for common scenarios, includin
 - Payment lifecycle enforced through business rules.
 - Payment state stored independently from payment operation history.
 - MapStruct used for request and response mapping.
-- Flyway manages all database schema migrations.
+- Flyway manages database schema migrations.
 - Integration tests validate the complete payment lifecycle and idempotency behavior.
-- Dockerized local development environment.
+- Dockerized development and deployment environment.
+- Production deployment on AWS EC2.
+- Automated deployments using `deploy.sh`.
 
 ---
 
@@ -365,4 +440,3 @@ The gateway returns appropriate HTTP status codes for common scenarios, includin
 - Authentication and authorization
 - PCI-compliant card tokenization
 - CI/CD pipeline with GitHub Actions
-- AWS deployment
