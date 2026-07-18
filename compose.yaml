@@ -40,6 +40,19 @@ services:
         condition: service_healthy
     networks:
       - payment-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "http://localhost:8080/actuator/health/readiness"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
 volumes:
   payment_postgres_data:
