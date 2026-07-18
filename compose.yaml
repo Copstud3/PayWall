@@ -1,0 +1,49 @@
+services:
+  payment-postgres:
+    image: postgres:16-alpine
+    container_name: payment-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: payment_gateway
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - payment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - payment-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME} -d payment_gateway"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payment-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://payment-postgres:5432/payment_gateway
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      BANK_BASE_URL: ${BANK_BASE_URL}
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m"
+    depends_on:
+      payment-postgres:
+        condition: service_healthy
+    networks:
+      - payment-network
+
+volumes:
+  payment_postgres_data:
+
+networks:
+  payment-network:
+    name: payment-network
